@@ -22,12 +22,23 @@ class Neo4jClient:
         )
         await self._driver.verify_connectivity()
         logger.info(f"Connected to Neo4j at {settings.neo4j_uri}")
+        await self._create_constraints()
 
     async def close(self) -> None:
         if self._driver is not None:
             await self._driver.close()
             self._driver = None
             logger.info("Neo4j connection closed")
+
+    async def _create_constraints(self) -> None:
+        if self._driver is None:
+            raise RuntimeError("Neo4j driver not initialized. Call connect() first.")
+        async with self._driver.session() as session:
+            await session.run("""
+                CREATE CONSTRAINT sentence_id_unique IF NOT EXISTS
+                FOR (s:Sentence) REQUIRE s.id IS UNIQUE
+            """)
+        logger.info("Neo4j constraints ensured")
 
     @property
     def driver(self) -> AsyncDriver:
