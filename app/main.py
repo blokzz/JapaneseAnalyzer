@@ -1,9 +1,12 @@
 from fastapi import FastAPI
+from app.api import sentences
+
 from app.config import get_settings
 from app.models.sentence import SentenceCreate
+from app.db.neo4j import lifespan
 
-app = FastAPI(title="Japanese RAG", version="0.1.0")
-
+app = FastAPI(title="Japanese RAG", version="0.1.0", lifespan=lifespan)
+app.include_router(sentences.router, prefix="/sentences", tags=["sentences"])
 
 @app.get("/health")
 def health() -> dict[str, str]:
