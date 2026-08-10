@@ -4,13 +4,16 @@ from neo4j import AsyncDriver
 from app.api.deps import get_neo4j_driver
 from app.models.sentence import Sentence, SentenceCreate
 from app.services.sentence_service import SentenceService
+from app.api.tokenize import get_tokenizer
+from app.services.tokenizer import TokenizerService
 
 router = APIRouter()
 
-
-def get_service(driver: AsyncDriver = Depends(get_neo4j_driver)) -> SentenceService:
-    return SentenceService(driver)
-
+def get_service(
+    driver: AsyncDriver = Depends(get_neo4j_driver),
+    tokenizer: TokenizerService = Depends(get_tokenizer),
+) -> SentenceService:
+    return SentenceService(driver, tokenizer)
 
 @router.post("", response_model=Sentence, status_code=status.HTTP_201_CREATED)
 async def create_sentence(
