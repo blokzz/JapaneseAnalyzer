@@ -38,6 +38,10 @@ class Neo4jClient:
                 CREATE CONSTRAINT sentence_id_unique IF NOT EXISTS
                 FOR (s:Sentence) REQUIRE s.id IS UNIQUE
             """)
+            await session.run("""
+                CREATE CONSTRAINT word_lemma_unique IF NOT EXISTS
+                FOR (w:Word) REQUIRE w.lemma IS UNIQUE
+            """)
         logger.info("Neo4j constraints ensured")
 
     @property
