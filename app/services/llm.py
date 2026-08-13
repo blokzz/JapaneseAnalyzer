@@ -18,7 +18,7 @@ ANALYZE_PROMPT = """You are an expert Japanese language teacher specializing in 
 
 Analyze this Japanese sentence and return a JSON object with these exact fields:
 - level: JLPT level ("N5", "N4", "N3", "N2", or "N1") — where N5 is easiest, N1 is hardest
-- grammar_points: array of short grammar patterns used, in English (e.g., ["past tense ました", "topic marker は"])
+- grammar_points: array of key grammar patterns and colloquial structures used, explained clearly in English (e.g., ["colloquial topic/quote marker って/ってのは", "explanatory form んだ", "conditional たら"])
 - vocabulary: array of the most important dictionary-form words in Japanese (e.g., ["食べる", "昨日"])
 - difficulty_score: number between 0.0 (very easy) and 1.0 (very hard)
 - explanation: 1-2 sentences in English explaining the sentence structure and meaning
