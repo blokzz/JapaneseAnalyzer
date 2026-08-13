@@ -1,7 +1,8 @@
+from app.services.llm import LLMService
+from app.api.deps import get_neo4j_driver, get_llm_service
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from neo4j import AsyncDriver
 
-from app.api.deps import get_neo4j_driver
 from app.models.sentence import Sentence, SentenceCreate
 from app.services.sentence_service import SentenceService
 from app.api.tokenize import get_tokenizer
@@ -12,15 +13,17 @@ router = APIRouter()
 def get_service(
     driver: AsyncDriver = Depends(get_neo4j_driver),
     tokenizer: TokenizerService = Depends(get_tokenizer),
+    llm: LLMService = Depends(get_llm_service),
 ) -> SentenceService:
-    return SentenceService(driver, tokenizer)
+    return SentenceService(driver, tokenizer, llm)
 
 @router.post("", response_model=Sentence, status_code=status.HTTP_201_CREATED)
 async def create_sentence(
     payload: SentenceCreate,
+    analyze: bool = Query(default=True),
     service: SentenceService = Depends(get_service),
 ) -> Sentence:
-    return await service.create(payload)
+    return await service.create(payload, analyze=analyze)
 
 
 @router.get("/{sentence_id}", response_model=Sentence)
