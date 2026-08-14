@@ -42,6 +42,16 @@ class Neo4jClient:
                 CREATE CONSTRAINT word_lemma_unique IF NOT EXISTS
                 FOR (w:Word) REQUIRE w.lemma IS UNIQUE
             """)
+            await session.run("""
+                CREATE VECTOR INDEX sentence_embedding IF NOT EXISTS
+                FOR (s:Sentence) ON (s.embedding)
+                OPTIONS {
+                    indexConfig: {
+                        `vector.dimensions`: 768,
+                    `vector.similarity_function`: 'cosine'
+                }
+            }
+        """)
         logger.info("Neo4j constraints ensured")
 
     @property
