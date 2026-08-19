@@ -23,6 +23,9 @@ class Settings(BaseSettings):
     chroma_persist_dir: Path = Path("./chroma_db")
 
     embedding_model: str = "intfloat/multilingual-e5-base"
+    import_batch_size: int = 100
+    import_max_sentences: int = 50000
+    tatoeba_data_dir: Path = Path("./data/tatoeba")
 
 
 @lru_cache
