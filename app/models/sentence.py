@@ -27,17 +27,19 @@ class SentenceCreate(BaseModel):
 
 class Sentence(SentenceCreate):
     model_config = ConfigDict(from_attributes=True)
-
     id: str
+    text: str
+    translations: list[str] = Field(default_factory=list)
+    source: str | None = None
     level: JLPTLevel | None = None
     created_at: datetime
 
 class SimilarSentence(BaseModel):
     id: str
     text: str
-    translation: str | None
+    translations: list[str] = Field(default_factory=list)   
     level: JLPTLevel | None
-    score: float = Field(ge=0.0, le=1.0, description="Cosine similarity")
+    score: float = Field(ge=0.0, le=1.0)
 
 
 class AnalysisResult(BaseModel):

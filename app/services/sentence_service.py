@@ -26,6 +26,7 @@ class SentenceService:
         sentence_id = str(uuid4())
         tokens = self._tokenizer.tokenize(payload.text)
         embedding = self._embeddings.embed_passage(payload.text)
+        translations = [payload.translation] if payload.translation else []
 
         level: JLPTLevel | None = None
         if analyze:
@@ -43,6 +44,7 @@ class SentenceService:
                 tokens=tokens,
                 level=level,
                 embedding=embedding,
+                translations=translations,
             )
 
         node = record["s"]
@@ -50,7 +52,7 @@ class SentenceService:
         return Sentence(
             id=node["id"],
             text=node["text"],
-            translation=node.get("translation"),
+            translations=node.get("translations", []), 
             source=node.get("source"),
             level=node.get("level"),
             created_at=node["created_at"].to_native(),
@@ -64,13 +66,14 @@ class SentenceService:
         tokens: list[Token],
         level: JLPTLevel | None,
         embedding: list[float],
+        translations: list[str],
     ):
         await tx.run(
             """
             CREATE (s:Sentence {
                 id: $id,
                 text: $text,
-                translation: $translation,
+                translations: $translations,
                 source: $source,
                 level: $level,
                 embedding: $embedding,
@@ -79,7 +82,7 @@ class SentenceService:
             """,
             id=sentence_id,
             text=payload.text,
-            translation=payload.translation,
+            translations=translations,
             source=payload.source,
             level=level.value if level else None,
             embedding=embedding,
@@ -124,7 +127,7 @@ class SentenceService:
         return Sentence(
             id=node["id"],
             text=node["text"],
-            translation=node.get("translation"),
+            translations=node.get("translations", []), 
             source=node.get("source"),
             level=node.get("level"),
             created_at=node["created_at"].to_native(),
@@ -145,7 +148,7 @@ class SentenceService:
             Sentence(
                 id=r["s"]["id"],
                 text=r["s"]["text"],
-                translation=r["s"].get("translation"),
+                translations=r["s"].get("translations", []), 
                 source=r["s"].get("source"),
                 level=r["s"].get("level"),
                 created_at=r["s"]["created_at"].to_native(),
@@ -169,7 +172,7 @@ class SentenceService:
         AND ($level IS NULL OR s.level = $level)
         RETURN s.id AS id,
            s.text AS text,
-           s.translation AS translation,
+           s.translations AS translations,
            s.level AS level,
            score
         ORDER BY score DESC
@@ -189,7 +192,7 @@ class SentenceService:
             SimilarSentence(
                 id=r["id"],
                 text=r["text"],
-                translation=r["translation"],
+                translations=r["translations"] or [],   
                 level=r["level"],
                 score=r["score"],
             )
@@ -208,7 +211,7 @@ class SentenceService:
         CALL db.index.vector.queryNodes('sentence_embedding', 50, $embedding)
         YIELD node AS s, score
         MATCH (s)-[:CONTAINS]->(w:Word {lemma: $word})
-        RETURN s.id AS id, s.text AS text, s.translation AS translation,
+        RETURN s.id AS id, s.text AS text, s.translations AS translations,
                s.level AS level, score
         ORDER BY score DESC
         LIMIT $limit
@@ -225,7 +228,7 @@ class SentenceService:
             SimilarSentence(
                 id=r["id"],
                 text=r["text"],
-                translation=r["translation"],
+                translations=r["translations"] or [],  
                 level=r["level"],
                 score=r["score"],
             )
