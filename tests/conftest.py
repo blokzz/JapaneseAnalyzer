@@ -1,0 +1,52 @@
+from collections.abc import AsyncIterator
+from unittest.mock import AsyncMock, MagicMock
+
+import pytest
+import pytest_asyncio
+
+from app.models.sentence import AnalysisResult, JLPTLevel
+from app.models.token import PartOfSpeech, Token
+from app.services.embeddings import EmbeddingService
+from app.services.llm import LLMService
+from app.services.tokenizer import TokenizerService
+
+
+@pytest.fixture
+def sample_tokens() -> list[Token]:
+    return [
+        Token(surface="私", lemma="私", reading="ワタシ", pos=PartOfSpeech.PRONOUN),
+        Token(surface="は", lemma="は", reading="ハ", pos=PartOfSpeech.PARTICLE),
+        Token(surface="学生", lemma="学生", reading="ガクセイ", pos=PartOfSpeech.NOUN),
+        Token(surface="です", lemma="です", reading="デス", pos=PartOfSpeech.AUXILIARY),
+    ]
+
+
+@pytest.fixture
+def mock_tokenizer(sample_tokens) -> MagicMock:
+    tokenizer = MagicMock(spec=TokenizerService)
+    tokenizer.tokenize.return_value = sample_tokens
+    return tokenizer
+
+
+@pytest.fixture
+def mock_embeddings() -> MagicMock:
+    embeddings = MagicMock(spec=EmbeddingService)
+    embeddings.embed_passage.return_value = [0.1] * 768
+    embeddings.embed_query.return_value = [0.1] * 768
+    embeddings.embed_passages.return_value = [[0.1] * 768]
+    embeddings.dimension = 768
+    return embeddings
+
+
+@pytest.fixture
+def mock_llm() -> AsyncMock:
+    llm = AsyncMock(spec=LLMService)
+    llm.analyze.return_value = AnalysisResult(
+        sentence="私は学生です",
+        level=JLPTLevel.N5,
+        grammar_points=["topic marker は", "copula です"],
+        vocabulary=["私", "学生"],
+        difficulty_score=0.1,
+        explanation="Simple sentence.",
+    )
+    return llm
