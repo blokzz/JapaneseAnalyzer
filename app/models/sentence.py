@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import Enum
-from typing import Annotated
+from typing import Annotated, Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
@@ -49,3 +49,22 @@ class AnalysisResult(BaseModel):
     vocabulary: list[str] = Field(default_factory=list)
     difficulty_score: float = Field(ge=0.0, le=1.0)
     explanation: str
+
+class CardExample(BaseModel):
+    sentence: str = ""
+    furigana: Optional[str] = ""
+    reading: Optional[str] = ""
+    translation: Optional[str] = ""
+
+class CardInput(BaseModel):
+    front: str
+    back: Optional[str] = ""
+    furigana: Optional[str] = ""
+    reading: Optional[str] = ""
+    onyomi: Optional[str] = ""
+    kunyomi: Optional[str] = ""
+    card_type: Literal["vocabulary","phrase","kanji","grammar"] = "vocabulary"
+    jlpt: Optional[Literal["N5","N4","N3","N2","N1"]] = None
+    meanings: list[str] = []
+    examples: list[CardExample] = []
+    synonyms: list[str] = []

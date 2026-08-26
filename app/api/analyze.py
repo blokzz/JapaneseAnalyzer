@@ -2,11 +2,25 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from loguru import logger
 
 from app.api.deps import get_llm_service
-from app.models.sentence import AnalysisResult, SentenceCreate
+from app.models.sentence import AnalysisResult, CardInput, SentenceCreate
 from app.services.llm import LLMService
 
 router = APIRouter()
 
+
+@router.post("/cards", response_model=list[CardInput])
+async def analyze_sentence_cards(
+    payload: SentenceCreate,
+    llm: LLMService = Depends(get_llm_service),
+) -> list[CardInput]:
+    try:
+        return await llm.create_cards(payload.text)
+    except Exception as e:
+        logger.exception(f"LLM cards creation failed for: {payload.text}")
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"LLM cards creation failed: {e}",
+        )
 
 @router.post("", response_model=AnalysisResult)
 async def analyze_sentence(
