@@ -1,4 +1,3 @@
-"""Test format promptu i parsowania odpowiedzi LLM."""
 import json
 from unittest.mock import AsyncMock, MagicMock, patch
 
