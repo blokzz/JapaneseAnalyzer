@@ -58,6 +58,10 @@ class SentenceService:
             created_at=node["created_at"].to_native(),
         )
 
+
+    # async def create_from_a_card(self, payload: dict):
+
+
     @staticmethod
     async def _create_sentence_tx(
         tx,

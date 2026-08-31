@@ -43,7 +43,11 @@ class TokenizerService:
         pos_ja = feature.pos1 or "その他"
         pos = POS_MAP.get(pos_ja, PartOfSpeech.OTHER)
 
-        lemma = getattr(feature, "lemma", None) or word.surface
+        lemma = (
+            getattr(feature, "orthBase", None)
+            or getattr(feature, "lemma", None)
+            or word.surface
+        )
         reading = getattr(feature, "kana", None) or getattr(feature, "pron", None)
         pos_detail = f"{feature.pos1}-{feature.pos2}" if feature.pos2 else feature.pos1
 
