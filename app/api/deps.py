@@ -3,6 +3,7 @@ from neo4j import AsyncDriver
 from app.db.neo4j import neo4j_client
 from app.services.llm import LLMService
 from app.services.embeddings import EmbeddingService
+from app.services.tokenizer import TokenizerService
 
 _embeddings_singleton: EmbeddingService | None = None
 
@@ -24,3 +25,13 @@ def get_llm_service() -> LLMService:
 
 def get_neo4j_driver() -> AsyncDriver:
     return neo4j_client.driver
+
+
+_tokenizer_singleton: TokenizerService | None = None
+
+
+def get_tokenizer() -> TokenizerService:
+    global _tokenizer_singleton
+    if _tokenizer_singleton is None:
+        _tokenizer_singleton = TokenizerService()
+    return _tokenizer_singleton
