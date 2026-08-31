@@ -45,6 +45,7 @@ INPUT: "{text}"
    - "phrase": Multi-word expressions, idioms, or full conversational sentences.
    - "kanji": Single kanji character analysis.
    - "grammar": Grammar patterns or structural particles.
+   - "onomatopoeia": Sound-symbolic word or phrase.
 
 2. `front` (required, string): Main Japanese text (in Kanji/Kana as commonly written).
 3. `back` (required, string): Concise English translation.
@@ -65,6 +66,7 @@ INPUT: "{text}"
 - Estimate the JLPT level strictly based on standard dictionaries (e.g. JMdict/Jisho).
 - Kanji complexity must determine the minimum level (e.g. 縁 cannot be N4).
 - If uncertain, default to higher levels (e.g. N3/N2 instead of N4/N5).
+- If level is unknown or uncertain, aim into the N1 > N2 > N3 range.
 
 8. `meanings` (array of strings): 2-4 primary English definitions or synonyms.
 
@@ -104,7 +106,7 @@ INPUT TO PROCESS:
 
 
 class LLMService:
-    MODEL = "openai/gpt-oss-120b"
+    MODEL = "qwen/qwen3.8-27b"
 
     def __init__(self) -> None:
         settings = get_settings()
@@ -157,5 +159,13 @@ class LLMService:
         data: dict[str, Any] = json.loads(raw)
         logger.debug(f"LLM raw response: {data}")
 
-        cards_raw = data.get("cards", [])
+        if "cards" in data:
+            cards_raw = data["cards"]
+            if not isinstance(cards_raw, list):
+                cards_raw = [cards_raw]
+        elif "front" in data:
+            cards_raw = [data]
+        else:
+            cards_raw = []
+
         return [CardInput(**item) for item in cards_raw]
