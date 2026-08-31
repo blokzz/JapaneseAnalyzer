@@ -6,8 +6,15 @@ from fastapi.middleware.cors import CORSMiddleware
 app = FastAPI(title="Japanese RAG", version="0.1.0", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:1420", "tauri://localhost"],
-    allow_methods=["*"], allow_headers=["*"],
+    allow_origins=[
+        "http://localhost:1420",
+        "http://localhost:8000",
+        "http://tauri.localhost",
+        "https://tauri.localhost",
+        "tauri://localhost",
+    ],
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 app.include_router(stats.router, prefix="/stats", tags=["stats"])
 app.include_router(analyze.router, prefix="/analyze", tags=["analyze"])
