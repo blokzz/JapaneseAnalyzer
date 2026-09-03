@@ -1,3 +1,5 @@
+
+from fastapi._compat.v2 import ValidationError
 from app.models.sentence import CardInput
 import json
 from typing import Any
@@ -29,81 +31,96 @@ Sentence: {text}
 Return ONLY valid JSON, no markdown, no extra text."""
 
 
-CARD_PROMPT_TEMPLATE = """
-You are creating high-quality Japanese language learning flashcards. Transform the provided input into a structured JSON array of card objects.
+CARD_SYSTEM_PROMPT = """You are a Japanese language teacher creating high-quality flashcards.
 
-INPUT: "{text}"
+You output ONLY valid JSON matching the exact schema below. No preamble, no comments.
 
-### OUTPUT CRITICAL RULES:
-1. Output ONLY a valid raw JSON array. Do NOT wrap it in Markdown code blocks (e.g., no ```json). No preamble, no postscript.
-2. Maintain clean schema structures. Optional fields with no applicable data MUST be returned as `null` (not empty strings or hallucinated data).
+# Schema
 
-### FIELD SPECIFICATIONS & RULES:
+Always return a JSON object with a single "cards" key containing an array,
+even when generating a single card:
 
-1. `card_type` (required, string):
-   - "vocabulary": Single words, compound terms, or verb/adjective forms.
-   - "phrase": Multi-word expressions, idioms, or full conversational sentences.
-   - "kanji": Single kanji character analysis.
-   - "grammar": Grammar patterns or structural particles.
-   - "onomatopoeia": Sound-symbolic word or phrase.
-
-2. `front` (required, string): Main Japanese text (in Kanji/Kana as commonly written).
-3. `back` (required, string): Concise English translation.
-
-4. `furigana` (optional, string/null):
-   - For `vocabulary`/`phrase`/`grammar`: Use bracket notation to map kanji to kana for UI rendering (e.g., "群[むら]がる", "食[た]べる"). If input has no kanji, set to `null` or raw kana string without brackets.
-   - Set to `null` for `kanji` type cards.
-
-5. `reading` (optional, string/null): Romaji reading using standard macrons (e.g., "muragaru", "taberu").
-
-6. `onyomi` & `kunyomi` (CRITICAL):
-   - ALWAYS set both to `null` for `vocabulary`, `phrase`, and `grammar` card types.
-   - ONLY populate these fields if `card_type` is strictly "kanji".
-   - `onyomi`: Katakana array or single string (e.g., "カン").
-   - `kunyomi`: Hiragana array or single string (e.g., "み.る").
-
-7. `jlpt` (optional, string/null): Estimated level ("N5", "N4", "N3", "N2", "N1") or `null`.
-- Estimate the JLPT level strictly based on standard dictionaries (e.g. JMdict/Jisho).
-- Kanji complexity must determine the minimum level (e.g. 縁 cannot be N4).
-- If uncertain, default to higher levels (e.g. N3/N2 instead of N4/N5).
-- If level is unknown or uncertain, aim into the N1 > N2 > N3 range.
-
-8. `meanings` (array of strings): 2-4 primary English definitions or synonyms.
-
-9. `examples` (array of objects): 1 to 3 natural contextual sentences.
-   Each object MUST contain:
-   - `sentence`: Original sentence in standard Japanese.
-   - `furigana`: Sentence with kanji annotated using bracket notation (e.g., "ハエが食[た]べ物[もの]の周[まわ]りに群[むら]がる。").
-   - `reading`: Full Romaji reading.
-   - `translation`: Natural English translation.
-
-10. `synonyms` & `antonyms` (array of strings): Relevant Japanese words, or empty array `[]`.
-
-### JSON STRUCTURE SCHEMA:
-Return a JSON object with a single key "cards" containing an array of card objects:
-{{
+{
   "cards": [
-    {{
-      "card_type": "vocabulary",
-      "front": "群がる",
-      "back": "to swarm",
-      "furigana": "群[むら]がる",
-      "reading": "muragaru",
-      "onyomi": null,
-      "kunyomi": null,
-      "jlpt": "N3",
-      "meanings": ["to swarm"],
-      "examples": [],
-      "synonyms": [],
-      "antonyms": []
-    }}
+    {
+      "card_type": "vocabulary" | "phrase" | "kanji" | "grammar",
+      "front":    string,        // Japanese text as commonly written (kanji + kana)
+      "back":     string,        // Concise English translation
+      "furigana": string | null, // Anki notation, e.g. "群[むら]がる"
+      "reading":  string | null, // Romaji with macrons, e.g. "muragaru"
+      "onyomi":   string | null, // Katakana; ONLY for card_type="kanji"
+      "kunyomi":  string | null, // Hiragana; ONLY for card_type="kanji"
+      "jlpt":     "N5" | "N4" | "N3" | "N2" | "N1" | null,
+      "meanings": [string],      // 2-4 English definitions
+      "examples": [
+        {
+          "sentence":    string, // Natural Japanese sentence
+          "furigana":    string, // Anki notation as above
+          "reading":     string, // Full romaji
+          "translation": string  // Natural English
+        }
+      ],
+      "synonyms": [string]       // Japanese words, or []
+    }
   ]
-}}
+}
 
-INPUT TO PROCESS:
-{text}
+# Rules
+
+- `onyomi` and `kunyomi` MUST be null unless `card_type="kanji"`.
+- `furigana` MUST be null when `card_type="kanji"`.
+- For inputs with no kanji, `furigana` is null.
+- Missing optional data is `null`, never an empty string or made-up value.
+- Generate 1-3 examples per card. Fewer is fine — better than fabricated.
+
+# JLPT level (be strict)
+
+- Base level on kanji complexity + grammar difficulty per JMdict/Jisho conventions.
+- Kanji complexity is a floor: 縁 cannot be N5 even if word is basic.
+- When uncertain, prefer HIGHER levels: N3 > N4, N2 > N3, N1 > N2.
+- If truly unknown, use N1.
+
+# Card type selection
+
+- **vocabulary**: single word or short compound (食べる, 学生, 一生懸命)
+- **phrase**: multi-word expression or idiom (お疲れ様でした, 猫の手も借りたい)
+- **kanji**: single kanji character analysis (漢, 縁)
+- **grammar**: pattern or structural particle (〜てしまう, 〜わけではない)
+- **onomatopoeia**: sound-symbolic word or phrase (ワンワン, ドキドキ)
 """
 
+CARD_SYSTEM_PROMPT_WITH_EXAMPLES = CARD_SYSTEM_PROMPT + """
+
+# Examples
+
+Input: 食べる
+Output: {"cards":[{"card_type":"vocabulary","front":"食べる","back":"to eat",
+"furigana":"食[た]べる","reading":"taberu","onyomi":null,"kunyomi":null,
+"jlpt":"N5","meanings":["to eat","to consume"],
+"examples":[{"sentence":"寿司を食べます。","furigana":"寿司[すし]を食[た]べます。",
+"reading":"Sushi wo tabemasu.","translation":"I eat sushi."}],
+"synonyms":["食う","召し上がる"]}]}
+
+Input: 縁
+Output: {"cards":[{"card_type":"kanji","front":"縁","back":"edge, connection, fate",
+"furigana":null,"reading":null,"onyomi":"エン","kunyomi":"ふち, ゆかり",
+"jlpt":"N1","meanings":["edge","border","connection","karmic bond"],
+"examples":[{"sentence":"縁がある。","furigana":"縁[えん]がある。",
+"reading":"En ga aru.","translation":"There is a connection/fate."}],
+"synonyms":["因縁","縁故"]}]}
+
+Input: 〜てしまう
+Output: {"cards":[{"card_type":"grammar","front":"〜てしまう","back":"to do completely / regretfully",
+"furigana":null,"reading":"~te shimau","onyomi":null,"kunyomi":null,
+"jlpt":"N4","meanings":["do completely","end up doing (regret)"],
+"examples":[{"sentence":"宿題を忘れてしまいました。",
+"furigana":"宿題[しゅくだい]を忘[わす]れてしまいました。",
+"reading":"Shukudai wo wasurete shimaimashita.",
+"translation":"I ended up forgetting my homework."}],
+"synonyms":[]}]}
+"""
+
+CARD_USER_TEMPLATE = "Input: {text}"
 
 class LLMService:
     MODEL = "qwen/qwen3.8-27b"
@@ -143,11 +160,18 @@ class LLMService:
             difficulty_score=float(data["difficulty_score"]),
             explanation=data["explanation"],
         )
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=1, max=10),
+        retry=retry_if_exception_type(GroqError),
+        reraise=True,
+    )
     async def create_cards(self, text: str) -> list[CardInput]:
         response = await self._client.chat.completions.create(
             model=self.MODEL,
             messages=[
-                {"role": "user", "content": CARD_PROMPT_TEMPLATE.format(text=text)},
+                {"role": "system", "content": CARD_SYSTEM_PROMPT_WITH_EXAMPLES},
+                {"role": "user", "content": CARD_USER_TEMPLATE.format(text=text)},
             ],
             response_format={"type": "json_object"},
             temperature=0.1,
@@ -155,17 +179,31 @@ class LLMService:
         raw = response.choices[0].message.content
         if not raw:
             raise ValueError("Empty response from LLM")
+        try:
+            data = json.loads(raw)
+        except json.JSONDecodeError as e:
+            logger.error(f"LLM returned invalid JSON: {raw[:200]}")
+            raise ValueError(f"LLM response is not valid JSON: {e}") from e
 
-        data: dict[str, Any] = json.loads(raw)
-        logger.debug(f"LLM raw response: {data}")
+        cards_raw = self._extract_cards(data)
 
+        cards: list[CardInput] = []
+        for i, item in enumerate(cards_raw):
+            try:
+                cards.append(CardInput(**item))
+            except ValidationError as e:
+                logger.warning(f"Card {i} failed validation, skipping: {e.errors()}")
+
+        if not cards:
+            raise ValueError("No valid cards in LLM response")
+
+        return cards
+
+    @staticmethod
+    def _extract_cards(data: dict) -> list[dict]:
         if "cards" in data:
-            cards_raw = data["cards"]
-            if not isinstance(cards_raw, list):
-                cards_raw = [cards_raw]
-        elif "front" in data:
-            cards_raw = [data]
-        else:
-            cards_raw = []
-
-        return [CardInput(**item) for item in cards_raw]
+            cards = data["cards"]
+            return cards if isinstance(cards, list) else [cards]
+        if "front" in data:
+            return [data]
+        return []
