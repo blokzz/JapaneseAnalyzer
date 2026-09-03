@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from loguru import logger
 
 from app.api.deps import get_llm_service
-from app.models.sentence import AnalysisResult, CardInput, SentenceCreate
+from app.models.sentence import AnalysisResult, CardGenerateRequest, CardInput, SentenceCreate
 from app.services.llm import LLMService
 
 router = APIRouter()
@@ -10,7 +10,7 @@ router = APIRouter()
 
 @router.post("/cards", response_model=list[CardInput])
 async def analyze_sentence_cards(
-    payload: SentenceCreate,
+    payload: CardGenerateRequest,
     llm: LLMService = Depends(get_llm_service),
 ) -> list[CardInput]:
     try:
