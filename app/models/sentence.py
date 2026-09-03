@@ -22,10 +22,10 @@ JapaneseText = Annotated[
 class SentenceCreate(BaseModel):
     text: JapaneseText
     translation: str | None = None
-    source: str | None = Field(default=None, description="np. 'tatoeba', 'manual'")
+    source: str | None = None
 
 
-class Sentence(SentenceCreate):
+class Sentence(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: str
     text: str
@@ -50,21 +50,32 @@ class AnalysisResult(BaseModel):
     difficulty_score: float = Field(ge=0.0, le=1.0)
     explanation: str
 
+
+class CardType(str, Enum):
+    VOCABULARY = "vocabulary"
+    PHRASE = "phrase"
+    KANJI = "kanji"
+    GRAMMAR = "grammar"
+    ONOMATOPOEIA = "onomatopoeia"
+
 class CardExample(BaseModel):
     sentence: str = ""
-    furigana: Optional[str] = ""
-    reading: Optional[str] = ""
-    translation: Optional[str] = ""
+    furigana: str | None = None
+    reading: str | None = None
+    translation: str | None = None
 
 class CardInput(BaseModel):
     front: str
-    back: Optional[str] = ""
-    furigana: Optional[str] = ""
-    reading: Optional[str] = ""
-    onyomi: Optional[str] = ""
-    kunyomi: Optional[str] = ""
-    card_type: Literal["vocabulary","phrase","kanji","grammar"] = "vocabulary"
-    jlpt: Optional[Literal["N5","N4","N3","N2","N1"]] = None
-    meanings: list[str] = []
-    examples: list[CardExample] = []
-    synonyms: list[str] = []
+    back: str | None = None
+    furigana: str | None = None
+    reading: str | None = None
+    onyomi: str | None = None
+    kunyomi: str | None = None
+    card_type: CardType = CardType.VOCABULARY   
+    jlpt: JLPTLevel | None = None                
+    meanings: list[str] = Field(default_factory=list)
+    examples: list[CardExample] = Field(default_factory=list)
+    synonyms: list[str] = Field(default_factory=list)
+
+class CardGenerateRequest(BaseModel):
+    text: JapaneseText
