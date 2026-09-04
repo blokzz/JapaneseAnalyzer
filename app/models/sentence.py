@@ -79,3 +79,17 @@ class CardInput(BaseModel):
 
 class CardGenerateRequest(BaseModel):
     text: JapaneseText
+    
+class Kanji(BaseModel):
+    character: str = Field(min_length=1, max_length=1)
+    created_at: datetime
+
+# class Kanji(BaseModel):
+#     character: str
+#     onyomi: list[str] = Field(default_factory=list)
+#     kunyomi: list[str] = Field(default_factory=list)
+#     meanings: list[str] = Field(default_factory=list)
+#     stroke_count: int | None = None
+#     jlpt: JLPTLevel | None = None
+#     grade: int | None = None
+#     radical: str | None = None
