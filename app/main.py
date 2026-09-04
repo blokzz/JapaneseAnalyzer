@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.api import analyze, sentences, stats, tokenize
+from app.api import analyze, ingest, sentences, stats, tokenize
 from app.db.neo4j import lifespan
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -17,6 +17,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.include_router(stats.router, prefix="/stats", tags=["stats"])
+app.include_router(ingest.router, prefix="/ingest", tags=["ingest"])
 app.include_router(analyze.router, prefix="/analyze", tags=["analyze"])
 app.include_router(sentences.router, prefix="/sentences", tags=["sentences"])
 app.include_router(tokenize.router, prefix="/tokenize", tags=["tokenize"])
