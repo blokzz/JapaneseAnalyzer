@@ -1,3 +1,5 @@
+from app.services.ingest_service import IngestService
+from fastapi import Depends
 from neo4j import AsyncDriver
 
 from app.db.neo4j import neo4j_client
@@ -35,3 +37,10 @@ def get_tokenizer() -> TokenizerService:
     if _tokenizer_singleton is None:
         _tokenizer_singleton = TokenizerService()
     return _tokenizer_singleton
+
+def get_ingest_service(
+    driver: AsyncDriver = Depends(get_neo4j_driver),
+    tokenizer: TokenizerService = Depends(get_tokenizer),
+    embeddings: EmbeddingService = Depends(get_embedding_service),
+) -> IngestService:
+    return IngestService(driver, tokenizer, embeddings)
