@@ -52,6 +52,8 @@ even when generating a single card:
       "kunyomi":  string | null, // Hiragana; ONLY for card_type="kanji"
       "jlpt":     "N5" | "N4" | "N3" | "N2" | "N1" | null,
       "meanings": [string],      // 2-4 English definitions
+      "register": "casual" | "formal" | "literary" | "neutral" | null,  // skip for kanji (leave null)
+      "usage_note": string , // Specific usage notes or restrictions (if necessary), skip for kanji (leave empty string)
       "examples": [
         {
           "sentence":    string, // Natural Japanese sentence
@@ -96,6 +98,8 @@ CARD_SYSTEM_PROMPT_WITH_EXAMPLES = CARD_SYSTEM_PROMPT + """
 Input: 食べる
 Output: {"cards":[{"card_type":"vocabulary","front":"食べる","back":"to eat",
 "furigana":"食[た]べる","reading":"taberu","onyomi":null,"kunyomi":null,
+"register": "neutral",
+"usage_note": "",
 "jlpt":"N5","meanings":["to eat","to consume"],
 "examples":[{"sentence":"寿司を食べます。","furigana":"寿司[すし]を食[た]べます。",
 "reading":"Sushi wo tabemasu.","translation":"I eat sushi."}],
@@ -105,6 +109,8 @@ Input: 縁
 Output: {"cards":[{"card_type":"kanji","front":"縁","back":"edge, connection, fate",
 "furigana":null,"reading":null,"onyomi":"エン","kunyomi":"ふち, ゆかり",
 "jlpt":"N1","meanings":["edge","border","connection","karmic bond"],
+"register": "neutral",
+"usage_note": "",
 "examples":[{"sentence":"縁がある。","furigana":"縁[えん]がある。",
 "reading":"En ga aru.","translation":"There is a connection/fate."}],
 "synonyms":["因縁","縁故"]}]}
@@ -112,6 +118,8 @@ Output: {"cards":[{"card_type":"kanji","front":"縁","back":"edge, connection, f
 Input: 〜てしまう
 Output: {"cards":[{"card_type":"grammar","front":"〜てしまう","back":"to do completely / regretfully",
 "furigana":null,"reading":"~te shimau","onyomi":null,"kunyomi":null,
+"register": "neutral",
+"usage_note": "",
 "jlpt":"N4","meanings":["do completely","end up doing (regret)"],
 "examples":[{"sentence":"宿題を忘れてしまいました。",
 "furigana":"宿題[しゅくだい]を忘[わす]れてしまいました。",
