@@ -1,9 +1,8 @@
 from app.models.sentence import SimilarSentence
 from uuid import uuid4
-
 from loguru import logger
 from neo4j import AsyncDriver
-
+import asyncio
 from app.models.sentence import Sentence, SentenceCreate, JLPTLevel
 from app.models.token import Token
 from app.services.tokenizer import TokenizerService
@@ -24,8 +23,8 @@ class SentenceService:
 
     async def create(self, payload: SentenceCreate, analyze: bool = True) -> Sentence:
         sentence_id = str(uuid4())
-        tokens = self._tokenizer.tokenize(payload.text)
-        embedding = self._embeddings.embed_passage(payload.text)
+        tokens = await asyncio.to_thread(self._tokenizer.tokenize, payload.text)
+        embedding = await asyncio.to_thread(self._embeddings.embed_passage, payload.text)
         translations = [payload.translation] if payload.translation else []
 
         level: JLPTLevel | None = None
