@@ -234,7 +234,7 @@ tests/
 
 ## Related projects
 
-[NihongoCards](https://github.com/blokzz/nihongo-cards) — Tauri + React desktop
+[NihongoCards](https://github.com/blokzz/nihongocards) — Tauri + React desktop
 flashcard app with FSRS spaced repetition. Cards approved there are POSTed to
 `/ingest` and their returned `word_id` is stored as a pointer to the knowledge graph.
 
