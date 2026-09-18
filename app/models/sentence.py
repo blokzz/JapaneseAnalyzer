@@ -74,6 +74,8 @@ class CardInput(BaseModel):
     card_type: CardType = CardType.VOCABULARY   
     jlpt: JLPTLevel | None = None                
     meanings: list[str] = Field(default_factory=list)
+    register: str | None = None
+    usage_note: str | None = None
     examples: list[CardExample] = Field(default_factory=list)
     synonyms: list[str] = Field(default_factory=list)
 

@@ -1,4 +1,5 @@
 
+from app.models.sentence import CardType
 from app.models.sentence import JapaneseText, JLPTLevel
 from pydantic import BaseModel, Field
 
@@ -12,5 +13,6 @@ class ExampleIngest(BaseModel):
 class CardIngestPayload(BaseModel):
     main_text: JapaneseText
     translation: str | None = None
+    card_type: CardType
     jlpt: JLPTLevel | None = None
     examples: list[ExampleIngest] = Field(default_factory=list)
