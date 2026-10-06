@@ -3,11 +3,11 @@
 GraphRAG backend for learning Japanese — combines semantic search, LLM analysis,
 and a knowledge graph of words, sentences, and kanji into a single queryable API.
 
-<!--
 <p align="center">
-  <img src="docs/images/demo.gif" width="700" alt="Demo">
+  <img src="docs/images/demo.png" width="700" alt="Knowledge graph of sentences, words and kanji">
+  <br>
+  <sub>Sentences (beige) link to dictionary-form words (green), which link to their kanji (blue).</sub>
 </p>
--->
 
 ## What it does
 
